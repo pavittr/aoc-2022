@@ -12,40 +12,85 @@ fn main() {
     .map(|s| s.to_string())
     .collect();
 
-    let mut shape_lines = sections[0]
-    .split("\n")
+
+    p1(&sections);
+    p2(&sections);
+}
+
+
+fn p1(sections: &Vec<String>) {
+    let shape_lines = sections[0]
+    .rsplit("\n")
     .map(|l| l.to_string())
+    .filter(|l| l.starts_with("[") || l.starts_with("  "))
     .collect::<Vec<String>>();
 
-    let legend = shape_lines.pop().unwrap();
-    let data = legend.split_ascii_whitespace().last().expect("No number I guess?");
-    println!("Data {}", data);
-    // let array_size:usize = data.parse::<usize>().unwrap();
-    // println!("Size: {}", array_size);
-    // println!("Block SHape: '{}'", shape_lines[0]);
+    let mut stacks = vec![Stack{ crates: vec![' '; 0] }; (shape_lines[0].len() +1 )/4];
 
+    for line in shape_lines.iter() {
+        let mut stack = 0;
+        line.chars().collect::<Vec<char>>().chunks(4).for_each(|chunk| { if chunk [1] != ' ' {stacks[stack].crates.push(chunk[1]) } stack+=1});
+    }
+
+    sections[1]
+    .split("\n")
+    .map(|l| l.to_string().split_whitespace().filter_map(|l| l.parse::<usize>().ok()).collect::<Vec<usize>>())
+    .for_each(|l| update_stacks(l, &mut stacks));
     
-    // let poles : Vec<Vec<String>> = Vec::new();
-    // A line will have length 
-    //  1
-    // [A]
-    //    3
-    //     [B]
-    //        7
-    //         [C]
-    //            11
-    // Length is:
-    // 1: 3
-    // 2: 7
-    // 3: 11
-    // n: 4n-1
-    // SO we can use this to figure out what the length of each line is. 
+     println!("P1: {}", stacks.iter().map(|stack| stack.crates.last().unwrap()).collect::<String>());
+}
 
-    // Take a line, look at its length, add 1 and divide by 4 to get the number of characters
-    // take every 2nd, 6th, 10th etc char up tot eh limit and push them onto a vector and return it. 
-    // Then fill the pole witht he vector
+fn p2(sections: &Vec<String>) {
+    let shape_lines = sections[0]
+    .rsplit("\n")
+    .map(|l| l.to_string())
+    .filter(|l| l.starts_with("[") || l.starts_with("  "))
+    .collect::<Vec<String>>();
+
+    let mut stacks = vec![Stack{ crates: vec![' '; 0] }; (shape_lines[0].len() +1 )/4];
+
+    for line in shape_lines.iter() {
+        let mut stack = 0;
+        line.chars().collect::<Vec<char>>().chunks(4).for_each(|chunk| { if chunk [1] != ' ' {stacks[stack].crates.push(chunk[1]) } stack+=1});
+    }
+
+    sections[1]
+    .split("\n")
+    .map(|l| l.to_string().split_whitespace().filter_map(|l| l.parse::<usize>().ok()).collect::<Vec<usize>>())
+    .for_each(|l| bulk_update_stacks(l, &mut stacks));
+
+     println!("P2: {}", stacks.iter().map(|stack| stack.crates.last().unwrap()).collect::<String>());
+}
+
+fn bulk_update_stacks(instruction: Vec<usize>, stacks : &mut Vec<Stack>) {
+    let batch_size = instruction[0];
+    let from: usize = instruction[1] - 1;
+    let to: usize = instruction[2] - 1;
+
+    // Take would be easier here but its in nightly
+    let mut elems = vec![' '; 0];
+    for _i in 0..batch_size {
+        elems.push(stacks[from].crates.pop().unwrap());
+        
+    }
+    elems.reverse();
+    elems.iter().for_each(|elem|  stacks[to].crates.push(*elem));
+}
 
 
-    
-    println!("Section1:\n{}", sections[0]);
+fn update_stacks(instruction: Vec<usize>, stacks : &mut Vec<Stack>) {
+    let loop_size = instruction[0];
+    let from: usize = instruction[1] - 1;
+    let to: usize = instruction[2] - 1;
+
+    for _i in 0..loop_size {
+        let elem = stacks[from].crates.pop().unwrap();
+        stacks[to].crates.push(elem);
+    }
+}
+
+#[derive(Clone)]
+pub struct Stack {
+
+    crates: Vec<char>,
 }

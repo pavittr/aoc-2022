@@ -17,6 +17,8 @@ fn main() {
 
     let mut currentpath: Vec<String> = vec![ "".to_string(); 1];
     let mut paths: HashMap<String, u32>  = HashMap::new();
+    let mut path_sizes : HashMap<String, u32> = HashMap::new();
+    path_sizes.insert("/".to_string(), 0);
 
     commands.iter().for_each(|cmd| {
         println!("Processing {}", cmd);
@@ -45,16 +47,36 @@ fn main() {
             let mut file_info = cmd.split_whitespace();
             let file_size = file_info.next().unwrap();
             let file_path = file_info.next().unwrap();
-            
+            // Add this to the path sections
+            let mut path_parts = currentpath.to_owned();
+            while path_parts.len() > 1 {
+                let cur_path = path_parts.join("/");
+                let curVal: u32 = *path_sizes.get(&cur_path).unwrap_or(&0);
+
+                println!("Potential Path: {}. Size {}", cur_path, curVal);
+                path_sizes.insert(path_parts.join("/"), curVal + file_size.parse::<u32>().unwrap());
+                path_parts.pop();
+            }
+
+            path_sizes.insert("/".to_string(), path_sizes.get("/").unwrap() + file_size.parse::<u32>().unwrap());
             paths.insert(currentpath.join("/")+ "/" + file_path, file_size.parse::<u32>().unwrap());
         }
-
     }
-        
     );
 
+    let total_size =  path_sizes.iter().filter(|(k,v)| v < &&(100000 as u32)).fold(0, |acc, (k,v)| acc + v);
+    println!("Sum {}", total_size);
 
-    paths.iter().for_each(|(k,v)| println!("{}={}", k, v));
+
+    let used_space = path_sizes.get("/").unwrap();
+    let free_space = 70000000 - used_space;
+
+    let need_to_find = 30000000 - free_space;
+
+    println!("Free space = {}, need {}", free_space, need_to_find);
+
+    let (smallest_folder_to_delete,smallest_folder_size) =  path_sizes.iter().filter(|(k,v)| v > &&(need_to_find) ).min_by(|(k1,v1),(k2,v2)| v1.cmp(v2)).unwrap();
+    println!("Can delete {}, size {}", smallest_folder_to_delete, smallest_folder_size);
 
 
 }
